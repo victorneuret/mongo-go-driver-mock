@@ -8,7 +8,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
-func TestInsert(t *testing.T) {
+func TestInsertOne(t *testing.T) {
 	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
 	defer mt.Close()
 
@@ -16,8 +16,6 @@ func TestInsert(t *testing.T) {
 		userCollection = mt.Coll
 		id := primitive.NewObjectID()
 		mt.AddMockResponses(mtest.CreateSuccessResponse())
-
-		mtest.CreateWriteErrorsResponse()
 
 		insertedUser, err := insert(user{
 			ID:    id,
@@ -31,5 +29,30 @@ func TestInsert(t *testing.T) {
 			Name:  "john",
 			Email: "john.doe@test.com",
 		}, insertedUser)
+	})
+}
+
+func TestInsertMany(t *testing.T) {
+	mt := mtest.New(t, mtest.NewOptions().ClientType(mtest.Mock))
+	defer mt.Close()
+
+	mt.Run("success", func(mt *mtest.T) {
+		userCollection = mt.Coll
+		users := []user{
+			{
+				ID:    primitive.NewObjectID(),
+				Name:  "john",
+				Email: "john.doe@test.com",
+			},
+			{
+				ID:    primitive.NewObjectID(),
+				Name:  "foo",
+				Email: "foo.bar@test.com",
+			},
+		}
+		mt.AddMockResponses(mtest.CreateSuccessResponse())
+
+		err := insertMany(users)
+		assert.Nil(t, err)
 	})
 }

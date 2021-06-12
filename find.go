@@ -16,3 +16,18 @@ func getFromID(id primitive.ObjectID) (*user, error) {
 	}
 	return &object, nil
 }
+
+func find(name string) ([]user, error) {
+	filter := bson.D{{Key: "name", Value: name}}
+	var users []user
+
+	cursor, err := userCollection.Find(context.Background(), filter)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = cursor.All(context.Background(), &users); err != nil {
+		return nil, err
+	}
+	return users, nil
+}
