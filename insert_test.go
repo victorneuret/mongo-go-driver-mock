@@ -4,7 +4,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/integration/mtest"
 )
 
@@ -22,13 +24,37 @@ func TestInsertOne(t *testing.T) {
 			Name:  "john",
 			Email: "john.doe@test.com",
 		})
-
 		assert.Nil(t, err)
 		assert.Equal(t, &user{
 			ID:    id,
 			Name:  "john",
 			Email: "john.doe@test.com",
 		}, insertedUser)
+	})
+
+	mt.Run("custom error duplicate", func(mt *mtest.T) {
+		userCollection = mt.Coll
+		mt.AddMockResponses(mtest.CreateWriteErrorsResponse(mtest.WriteError{
+			Index:   1,
+			Code:    11000,
+			Message: "duplicate key error",
+		}))
+
+		insertedUser, err := insert(user{})
+
+		assert.Nil(t, insertedUser)
+		assert.NotNil(t, err)
+		assert.True(t, mongo.IsDuplicateKeyError(err))
+	})
+
+	mt.Run("simple error", func(mt *mtest.T) {
+		userCollection = mt.Coll
+		mt.AddMockResponses(bson.D{{"ok", 0}})
+
+		insertedUser, err := insert(user{})
+
+		assert.Nil(t, insertedUser)
+		assert.NotNil(t, err)
 	})
 }
 
